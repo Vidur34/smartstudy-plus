@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Calendar,
   Clock,
@@ -34,28 +37,28 @@ const SmartStudyDemo = () => {
   const [user] = useState({
     name: "Vidur",
     college: "NITH University",
-    semester: 3,
-    attendanceCriteria: 75,
+    semester: 2,
+    attendanceCriteria: 70,
   });
 
   const [subjects] = useState([
     {
       id: 1,
-      name: "Data Structures",
-      code: "CS201",
+      name: "MECHANICAL",
+      code: "ME101",
       color: "#3B82F6",
       total: 40,
       attended: 32,
-      professor: "Dr. Smith",
+      professor: "Dr. SHUSHANT",
     },
     {
       id: 2,
-      name: "Algorithms",
+      name: "MATHEMATICS",
       code: "CS202",
       color: "#8B5CF6",
       total: 38,
       attended: 25,
-      professor: "Dr. Johnson",
+      professor: "Dr. SUKET",
     },
     {
       id: 3,
@@ -194,11 +197,32 @@ const SmartStudyDemo = () => {
     return { percentage, status, classesNeeded: Math.max(0, classesNeeded) };
   };
 
+  const [stats] = useState(
+    subjects.map((subject) => calculateAttendance(subject)),
+  );
+  const [isSubjHovering, setIsSubjHovering] = useState(false);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good Morning";
     if (hour < 18) return "Good Afternoon";
     return "Good Evening";
+  };
+
+  const getAIInsight = (stats) => {
+    if (stats.status === "safe") {
+      return `🧠 SmartStudy Insight: You can bunk ${stats.classesNeeded} class${
+        stats.classesNeeded !== 1 ? "es" : ""
+      } safely`;
+    }
+
+    if (stats.status === "warning") {
+      return `⚠️ SmartStudy Insight: Attend ${stats.classesNeeded} more class${
+        stats.classesNeeded !== 1 ? "es" : ""
+      } to stay safe`;
+    }
+
+    return "❌ SmartStudy Insight: Attendance critical — no bunking allowed";
   };
 
   const getStatusColor = (status) => {
@@ -221,10 +245,46 @@ const SmartStudyDemo = () => {
       case "medium":
         return "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30";
       case "low":
-        return "text-blue-600 bg-blue-100 dark:bg-blue-900/30";
+        return "text-blue-600 bg-blue-100 dark:bg-blue-900/40";
       default:
         return "text-gray-600 bg-gray-100";
     }
+  };
+
+  const Card3D = ({ children, className = "" }) => {
+    const [style, setStyle] = useState({});
+
+    const handleMouseMove = (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const rotateX = (y / rect.height - 0.5) * -15;
+      const rotateY = (x / rect.width - 0.5) * 15;
+
+      setStyle({
+        transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.04)`,
+        boxShadow: "0 30px 60px rgba(0,0,0,0.25)",
+      });
+    };
+
+    const reset = () => {
+      setStyle({
+        transform: "perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+      });
+    };
+
+    return (
+      <div
+        onMouseMove={handleMouseMove}
+        onMouseLeave={reset}
+        style={style}
+        className={`transition-all duration-300 rounded-3xl ${className}`}
+      >
+        {children}
+      </div>
+    );
   };
 
   // Components
@@ -235,40 +295,63 @@ const SmartStudyDemo = () => {
     subtitle,
     trend,
     color = "primary",
-  }) => (
-    <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 group">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3">
-            <div
-              className={`p-3 rounded-xl bg-${color}-100 dark:bg-${color}-900/30 group-hover:scale-110 transition-transform`}
-            >
-              <Icon className={`w-6 h-6 text-${color}-600`} />
+    index = 0,
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
+        whileHover={{ translateY: -5 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`glass-card p-6 hover:shadow-2xl transition-all duration-300 group ${
+          isHovered ? "bg-primary-100 dark:bg-primary-900/30" : ""
+        }`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <motion.div
+                className={`p-3 rounded-xl bg-${color}-100 dark:bg-${color}-900/30 group-hover:scale-110 transition-transform`}
+                whileHover={{ scale: 1.2, rotate: 5 }}
+              >
+                <Icon className={`w-6 h-6 text-${color}-600`} />
+              </motion.div>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                {title}
+              </h3>
             </div>
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {title}
-            </h3>
+            <motion.p
+              className="text-3xl font-bold text-gray-900 dark:text-white mb-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: index * 0.1 + 0.3 }}
+            >
+              {value}
+            </motion.p>
+            {subtitle && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {subtitle}
+              </p>
+            )}
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-            {value}
-          </p>
-          {subtitle && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {subtitle}
-            </p>
+          {trend && (
+            <motion.div
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg ${trend > 0 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1 + 0.4 }}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-xs font-semibold">{Math.abs(trend)}%</span>
+            </motion.div>
           )}
         </div>
-        {trend && (
-          <div
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg ${trend > 0 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-xs font-semibold">{Math.abs(trend)}%</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+      </motion.div>
+    );
+  };
 
   const CircularProgress = ({
     percentage,
@@ -288,7 +371,12 @@ const SmartStudyDemo = () => {
     };
 
     return (
-      <div className="relative inline-flex items-center justify-center">
+      <motion.div
+        className="relative inline-flex items-center justify-center"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
         <svg width={size} height={size} className="transform -rotate-90">
           <circle
             cx={size / 2}
@@ -299,7 +387,7 @@ const SmartStudyDemo = () => {
             fill="none"
             className="text-gray-200 dark:text-gray-700"
           />
-          <circle
+          <motion.circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
@@ -310,37 +398,69 @@ const SmartStudyDemo = () => {
             strokeDashoffset={offset}
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out"
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.5, ease: "easeInOut", delay: 0.3 }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold">{percentage}%</span>
+          <motion.span
+            className="text-2xl font-bold"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            {percentage}%
+          </motion.span>
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   // Page Components
   const DashboardPage = () => {
     const overallAttendance = Math.round(
-      subjects.reduce((sum, s) => sum + calculateAttendance(s).percentage, 0) /
-        subjects.length,
+      stats.reduce((sum, s) => sum + s.percentage, 0) / stats.length,
     );
     const pendingTasks = tasks.filter((t) => t.status !== "done").length;
-    const criticalSubjects = subjects.filter(
-      (s) => calculateAttendance(s).status === "critical",
+    const criticalSubjects = stats.filter(
+      (s) => s.status === "critical",
     ).length;
 
     return (
-      <div className="space-y-6 animate-fade-in">
+      <motion.div className="space-y-6">
         {/* Greeting Header */}
-        <div className="glass-card p-8 bg-gradient-to-br from-primary-500 to-accent-600 text-white">
-          <h1 className="text-4xl font-bold mb-2">
-            {getGreeting()}, {user.name}! 👋
-          </h1>
-          <p className="text-xl opacity-90">
-            {user.college} • Semester {user.semester}
-          </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="glass-card p-8 bg-gradient-to-br from-primary-500 to-accent-600 text-white overflow-hidden relative"
+        >
+          <motion.div
+            className="absolute inset-0 bg-white/10"
+            initial={{ x: "-100%" }}
+            animate={{ x: "100%" }}
+            transition={{ duration: 1.5, delay: 0.3 }}
+          />
+          <div className="relative z-10">
+            <motion.h1
+              className="text-4xl font-bold mb-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              {getGreeting()}, {user.name}! 👋
+            </motion.h1>
+            <motion.p
+              className="text-xl opacity-90"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              {user.college} • Semester {user.semester}
+            </motion.p>
+          </div>
+        </motion.div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -350,6 +470,7 @@ const SmartStudyDemo = () => {
             value={`${overallAttendance}%`}
             subtitle={`${user.attendanceCriteria}% required`}
             trend={overallAttendance >= user.attendanceCriteria ? 5 : -3}
+            index={0}
           />
           <StatCard
             icon={BookOpen}
@@ -357,6 +478,7 @@ const SmartStudyDemo = () => {
             value={pendingTasks}
             subtitle={`${tasks.length} total tasks`}
             color="accent"
+            index={1}
           />
           <StatCard
             icon={AlertCircle}
@@ -364,6 +486,7 @@ const SmartStudyDemo = () => {
             value={criticalSubjects}
             subtitle="Need attention"
             color="accent"
+            index={2}
           />
           <StatCard
             icon={Clock}
@@ -371,24 +494,39 @@ const SmartStudyDemo = () => {
             value="09:00 AM"
             subtitle="Data Structures"
             color="accent"
+            index={3}
           />
         </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Today's Schedule */}
-          <div className="lg:col-span-2 glass-card p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="lg:col-span-2 glass-card p-6"
+          >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Today's Schedule</h2>
               <span className="text-sm text-gray-500">Monday, Feb 1</span>
             </div>
             <div className="space-y-4">
               {timetable.Monday.map((class_, idx) => (
-                <div
+                <motion.div
                   key={idx}
-                  className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-md transition-shadow"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + idx * 0.1, duration: 0.5 }}
+                  whileHover={{ x: 10, transition: { duration: 0.2 } }}
+                  className={`flex items-center gap-4 p-4 rounded-xl hover:shadow-md transition-all bg-gray-50 dark:bg-gray-800`}
                 >
-                  <div className="w-2 h-16 rounded-full bg-primary-500"></div>
+                  <motion.div
+                    className="w-2 h-16 rounded-full bg-primary-500"
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
+                    transition={{ delay: 0.5 + idx * 0.1, duration: 0.4 }}
+                  ></motion.div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{class_.subject}</h3>
                     <p className="text-sm text-gray-500">
@@ -400,68 +538,115 @@ const SmartStudyDemo = () => {
                       {class_.time}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Attendance Overview */}
-          <div className="glass-card p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="glass-card p-6"
+          >
             <h2 className="text-2xl font-bold mb-6">Attendance</h2>
             <div className="flex flex-col items-center mb-6">
               <CircularProgress percentage={overallAttendance} />
-              <p className="mt-4 text-sm text-gray-500">Overall Attendance</p>
+              <motion.p
+                className="mt-4 text-sm text-gray-500"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+              >
+                Overall Attendance
+              </motion.p>
             </div>
             <div className="space-y-3">
-              {subjects.slice(0, 3).map((subject) => {
-                const stats = calculateAttendance(subject);
+              {subjects.slice(0, 3).map((subject, idx) => {
+                const stat = stats[idx];
                 return (
-                  <div
+                  <motion.div
                     key={subject.id}
-                    className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + idx * 0.1, duration: 0.5 }}
+                    onMouseEnter={() => setIsSubjHovering(true)}
+                    onMouseLeave={() => setIsSubjHovering(false)}
+                    className={`p-3 rounded-lg transition-all ${
+                      isSubjHovering
+                        ? "bg-accent-100 dark:bg-accent-900/40 text-accent-900 dark:text-accent-100"
+                        : "bg-gray-50 dark:bg-gray-800"
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-sm">
                         {subject.name}
                       </span>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${getStatusColor(stats.status)}`}
+                      <motion.span
+                        className={`text-xs px-2 py-1 rounded-full ${getStatusColor(stat.status)}`}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.6 + idx * 0.1 + 0.2 }}
                       >
-                        {stats.percentage}%
-                      </span>
+                        {stat.percentage}%
+                      </motion.span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                      <motion.div
                         className="h-2 rounded-full bg-gradient-to-r from-primary-500 to-accent-500"
-                        style={{ width: `${stats.percentage}%` }}
-                      ></div>
+                        initial={{ width: 0 }}
+                        animate={{ width: `${stat.percentage}%` }}
+                        transition={{
+                          delay: 0.6 + idx * 0.1 + 0.3,
+                          duration: 0.8,
+                        }}
+                      ></motion.div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Upcoming Tasks */}
-        <div className="glass-card p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="glass-card p-6"
+        >
           <h2 className="text-2xl font-bold mb-6">Upcoming Tasks</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tasks
               .filter((t) => t.status !== "done")
               .slice(0, 3)
-              .map((task) => (
-                <div
+              .map((task, idx) => (
+                <motion.div
                   key={task.id}
-                  className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-shadow"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.7 + idx * 0.1, duration: 0.5 }}
+                  whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                  className={`p-4 border rounded-xl hover:shadow-lg transition-all ${
+                    task.status === "todo"
+                      ? "bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100"
+                      : task.status === "in-progress"
+                        ? "bg-yellow-100 dark:bg-yellow-900/40 border-yellow-300 dark:border-yellow-700 text-yellow-900 dark:text-yellow-100"
+                        : "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700 text-green-900 dark:text-green-100"
+                  }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="font-semibold">{task.title}</h3>
-                    <span
+                    <motion.span
                       className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(task.priority)}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.7 + idx * 0.1 + 0.2 }}
                     >
                       {task.priority}
-                    </span>
+                    </motion.span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     {task.subject}
@@ -474,11 +659,11 @@ const SmartStudyDemo = () => {
                       {task.type}
                     </span>
                   </div>
-                </div>
+                </motion.div>
               ))}
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   };
 
@@ -505,17 +690,27 @@ const SmartStudyDemo = () => {
     };
 
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+      <motion.div className="space-y-6">
+        <motion.div
+          className="flex items-center justify-between"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <h1 className="text-3xl font-bold">Attendance Tracker</h1>
-          <button
+          <motion.button
             onClick={() => setShowMarkModal(true)}
             className="btn-primary flex items-center gap-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
           >
             <Plus className="w-5 h-5" />
             Mark Attendance
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Mark Attendance Modal */}
         {showMarkModal && (
@@ -566,110 +761,189 @@ const SmartStudyDemo = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {localSubjects.map((subject) => {
-            const stats = calculateAttendance(subject);
+          {localSubjects.map((subject, idx) => {
+            const stat = stats[idx];
             return (
-              <div
+              <motion.div
                 key={subject.id}
-                className="glass-card p-6 hover:shadow-2xl transition-all"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + idx * 0.1, duration: 0.6 }}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold">{subject.name}</h3>
-                    <p className="text-sm text-gray-500">{subject.code}</p>
-                  </div>
+                <Card3D className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                  {/* Colored Header Bar */}
                   <div
-                    className="w-12 h-12 rounded-xl"
+                    className="h-2 w-full"
                     style={{ backgroundColor: subject.color }}
                   ></div>
-                </div>
 
-                <div className="flex justify-center my-6">
-                  <CircularProgress
-                    percentage={stats.percentage}
-                    color={
-                      stats.status === "safe"
-                        ? "green"
-                        : stats.status === "warning"
-                          ? "yellow"
-                          : "red"
-                    }
-                  />
-                </div>
+                  <div className="p-6">
+                    {/* Subject Header */}
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                          {subject.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {subject.code} • {subject.professor}
+                        </p>
+                      </div>
+                      <div
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg"
+                        style={{ backgroundColor: subject.color }}
+                      >
+                        {stat.percentage}%
+                      </div>
+                    </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Total Classes
-                    </span>
-                    <span className="font-semibold">{subject.total}</span>
+                    {/* Status Badge */}
+                    <div className="mb-4">
+                      <span
+                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(stat.status)}`}
+                      >
+                        {stat.status === "safe"
+                          ? "✅ Safe Zone"
+                          : stat.status === "warning"
+                            ? "⚠️ At Risk"
+                            : "❌ Critical"}
+                      </span>
+                    </div>
+                    {/* AI Insight */}
+                    <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 border border-indigo-200 dark:border-indigo-800">
+                      <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                        {getAIInsight(stat)}
+                      </p>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mb-6">
+                      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        <span>Attendance Progress</span>
+                        <span className="font-semibold">
+                          {subject.attended}/{subject.total} classes
+                        </span>
+                      </div>
+                      <div className="w-full h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500 shadow-sm"
+                          style={{
+                            width: `${stat.percentage}%`,
+                            backgroundColor: subject.color,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 border border-green-200 dark:border-green-800">
+                        <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">
+                          Present
+                        </p>
+                        <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                          {subject.attended}
+                        </p>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 border border-red-200 dark:border-red-800">
+                        <p className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">
+                          Absent
+                        </p>
+                        <p className="text-2xl font-bold text-red-700 dark:text-red-300">
+                          {subject.total - subject.attended}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Warning Message */}
+                    {stat.classesNeeded > 0 && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 mb-4">
+                        <p className="text-xs text-amber-800 dark:text-amber-200">
+                          📚 Attend{" "}
+                          <span className="font-bold">
+                            {stat.classesNeeded} more class
+                            {stat.classesNeeded > 1 ? "es" : ""}
+                          </span>{" "}
+                          to reach {user.attendanceCriteria}%
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Quick Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleMarkAttendance(subject.id, true)}
+                        className="flex-1 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Present
+                      </button>
+                      <button
+                        onClick={() => handleMarkAttendance(subject.id, false)}
+                        className="flex-1 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Absent
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Attended
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      {subject.attended}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Absent
-                    </span>
-                    <span className="font-semibold text-red-600">
-                      {subject.total - subject.attended}
-                    </span>
-                  </div>
-                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(stats.status)}`}
-                    >
-                      {stats.status === "safe"
-                        ? "✅ Safe"
-                        : stats.status === "warning"
-                          ? "⚠️ Warning"
-                          : "❌ Critical"}
-                    </span>
-                  </div>
-                  {stats.classesNeeded > 0 && (
-                    <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
-                      Need to attend {stats.classesNeeded} more class
-                      {stats.classesNeeded > 1 ? "es" : ""} to reach{" "}
-                      {user.attendanceCriteria}%
-                    </p>
-                  )}
-                </div>
-              </div>
+                </Card3D>
+              </motion.div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   const TimetablePage = () => (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <motion.div className="space-y-6">
+      <motion.div
+        className="flex items-center justify-between"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
         <h1 className="text-3xl font-bold">Weekly Timetable</h1>
-        <button className="btn-primary flex items-center gap-2">
+        <motion.button
+          className="btn-primary flex items-center gap-2"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           <Plus className="w-5 h-5" />
           Add Class
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
-      <div className="glass-card p-6">
+      <motion.div
+        className="glass-card p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Object.entries(timetable).map(([day, classes]) => (
-            <div
+          {Object.entries(timetable).map(([day, classes], dayIdx) => (
+            <motion.div
               key={day}
-              className="border border-gray-200 dark:border-gray-700 rounded-xl p-4"
+              className={`border rounded-xl p-4 transition-all`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 + dayIdx * 0.1, duration: 0.6 }}
             >
               <h3 className="text-xl font-bold mb-4 text-primary-600">{day}</h3>
               <div className="space-y-3">
                 {classes.map((class_, idx) => (
-                  <div
+                  <motion.div
                     key={idx}
-                    className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    className="p-3 rounded-lg transition-all"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      delay: 0.4 + dayIdx * 0.1 + idx * 0.05,
+                      duration: 0.5,
+                    }}
                   >
                     <h4 className="font-semibold mb-1">{class_.subject}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -678,14 +952,14 @@ const SmartStudyDemo = () => {
                     <p className="text-xs text-gray-500 mt-1">
                       {class_.room} • {class_.type}
                     </p>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 
   const TasksPage = () => {
@@ -742,17 +1016,27 @@ const SmartStudyDemo = () => {
     };
 
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+      <motion.div className="space-y-6">
+        <motion.div
+          className="flex items-center justify-between"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <h1 className="text-3xl font-bold">Task Manager</h1>
-          <button
+          <motion.button
             onClick={() => setShowCreateModal(true)}
             className="btn-primary flex items-center gap-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
           >
             <Plus className="w-5 h-5" />
             New Task
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Create Task Modal */}
         {showCreateModal && (
@@ -870,8 +1154,14 @@ const SmartStudyDemo = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Object.entries(kanban).map(([status, taskList]) => (
-            <div key={status} className="glass-card p-4">
+          {Object.entries(kanban).map(([status, taskList], statusIdx) => (
+            <motion.div
+              key={status}
+              className={`glass-card p-4 transition-all`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + statusIdx * 0.1, duration: 0.6 }}
+            >
               <h2 className="text-lg font-bold mb-4 capitalize flex items-center gap-2">
                 {status === "todo" && "📝"}
                 {status === "in-progress" && "⏳"}
@@ -882,10 +1172,17 @@ const SmartStudyDemo = () => {
                 </span>
               </h2>
               <div className="space-y-3 min-h-[200px]">
-                {taskList.map((task) => (
-                  <div
+                {taskList.map((task, taskIdx) => (
+                  <motion.div
                     key={task.id}
-                    className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow group"
+                    className={`p-4 border rounded-lg hover:shadow-md transition-all group`}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      delay: 0.3 + statusIdx * 0.1 + taskIdx * 0.05,
+                      duration: 0.5,
+                    }}
+                    whileHover={{ y: -2, transition: { duration: 0.2 } }}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="font-semibold flex-1">{task.title}</h3>
@@ -937,17 +1234,24 @@ const SmartStudyDemo = () => {
                         {task.type}
                       </span>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   // Main render
+  const pages = {
+    dashboard: <DashboardPage />,
+    attendance: <AttendancePage />,
+    timetable: <TimetablePage />,
+    tasks: <TasksPage />,
+  };
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -956,26 +1260,39 @@ const SmartStudyDemo = () => {
     }
   }, [darkMode]);
 
-  const pages = {
-    dashboard: <DashboardPage />,
-    attendance: <AttendancePage />,
-    timetable: <TimetablePage />,
-    tasks: <TasksPage />,
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-950 dark:to-blue-950/20">
       {/* Sidebar */}
-      <aside
+      <motion.aside
         className={`fixed top-0 left-0 z-40 h-screen transition-transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} w-64`}
+        initial={{ x: -256 }}
+        animate={{ x: sidebarOpen ? 0 : -256 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         <div className="h-full px-3 py-4 overflow-y-auto glass-card rounded-r-3xl">
-          <div className="flex items-center justify-between mb-8 px-2">
-            <h1 className="text-2xl font-bold gradient-text">SmartStudy+</h1>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
+          <motion.div
+            className="flex items-center justify-between mb-8 px-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <motion.h1
+              className="text-2xl font-bold gradient-text"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              SmartStudy+
+            </motion.h1>
+            <motion.button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
               <X className="w-6 h-6" />
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
 
           <nav className="space-y-2">
             {[
@@ -983,8 +1300,8 @@ const SmartStudyDemo = () => {
               { id: "attendance", icon: CheckCircle2, label: "Attendance" },
               { id: "timetable", icon: Calendar, label: "Timetable" },
               { id: "tasks", icon: BookOpen, label: "Tasks" },
-            ].map((item) => (
-              <button
+            ].map((item, idx) => (
+              <motion.button
                 key={item.id}
                 onClick={() => setCurrentPage(item.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
@@ -992,51 +1309,99 @@ const SmartStudyDemo = () => {
                     ? "bg-primary-500 text-white shadow-lg"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 + idx * 0.05 }}
+                whileHover={{ x: 5 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <item.icon className="w-5 h-5" />
+                {item.id === "tasks" && currentPage === "tasks" ? (
+                  <motion.div
+                    animate={{ rotateY: [0, 180, 360] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Number.POSITIVE_INFINITY,
+                    }}
+                    style={{ transformStyle: "preserve-3d" }}
+                  >
+                    <item.icon className="w-5 h-5" />
+                  </motion.div>
+                ) : (
+                  <item.icon className="w-5 h-5" />
+                )}
                 <span className="font-medium">{item.label}</span>
-              </button>
+              </motion.button>
             ))}
           </nav>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Main Content */}
       <div className={`${sidebarOpen ? "lg:ml-64" : ""} transition-all`}>
         {/* Top Nav */}
-        <header className="glass-card sticky top-0 z-30 px-6 py-4">
+        <motion.header
+          className="glass-card sticky top-0 z-30 px-6 py-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="flex items-center justify-between">
-            <button
+            <motion.button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
               <Menu className="w-6 h-6" />
-            </button>
+            </motion.button>
 
-            <div className="flex items-center gap-4">
-              <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 relative">
+            <motion.div
+              className="flex items-center gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <motion.button
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 relative"
+                whileHover={{ scale: 1.1 }}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+              >
                 <Bell className="w-6 h-6" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              <button
+                <motion.span
+                  className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Number.POSITIVE_INFINITY, duration: 2 }}
+                ></motion.span>
+              </motion.button>
+              <motion.button
                 onClick={() => setDarkMode(!darkMode)}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                whileHover={{ scale: 1.1, rotate: 20 }}
+                whileTap={{ scale: 0.9 }}
               >
                 {darkMode ? (
                   <Sun className="w-6 h-6" />
                 ) : (
                   <Moon className="w-6 h-6" />
                 )}
-              </button>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold">
+              </motion.button>
+              <motion.div
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold"
+                whileHover={{ scale: 1.1 }}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+              >
                 {user.name[0]}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
-        </header>
+        </motion.header>
 
         {/* Page Content */}
-        <main className="p-6">{pages[currentPage]}</main>
+        <main className="p-6 cursor-circle">{pages[currentPage]}</main>
       </div>
     </div>
   );
